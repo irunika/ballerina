@@ -17,7 +17,7 @@
  *
  */
 
-package org.ballerinalang.services.dispatchers.websocket;
+package org.ballerinalang.services.dispatchers.ws;
 
 import org.ballerinalang.bre.Context;
 import org.ballerinalang.model.AnnotationAttachment;
@@ -92,8 +92,13 @@ public class WebSocketServiceDispatcher extends HTTPServiceDispatcher {
 
     @Override
     public void serviceRegistered(Service service) {
-        if (findWebSocketUpgradePath(service) != null) {
+        if (findWebSocketUpgradePath(service) != null && !isWebSocketClientService(service)) {
             super.serviceRegistered(service);
+        } else if (isWebSocketClientService(service)) {
+            WebSocketClientServicesRegistry.getInstance().addService(service);
+        } else if (findWebSocketUpgradePath(service) != null && isWebSocketClientService(service)) {
+            throw new BallerinaException("Error in annotations: Cannot define @ws:WebSocketUpgradePath and " +
+                                                 "@ws:ClientService in the same service.");
         }
     }
 
@@ -170,8 +175,8 @@ public class WebSocketServiceDispatcher extends HTTPServiceDispatcher {
             if (annotation.getPkgName().equals(Constants.PROTOCOL_HTTP) &&
                 annotation.getName().equals(Constants.ANNOTATION_NAME_BASE_PATH)) {
                 basePathAnnotation = annotation;
-            } else if (annotation.getName().equals(
-                    Constants.PROTOCOL_WEBSOCKET + ":" + Constants.ANNOTATION_NAME_WEBSOCKET_UPGRADE_PATH)) {
+            } else if (annotation.getPkgName().equals(Constants.PROTOCOL_WEBSOCKET) &&
+                    annotation.getName().equals(Constants.ANNOTATION_NAME_WEBSOCKET_UPGRADE_PATH)) {
                 websocketUpgradePathAnnotation = annotation;
             }
         }
@@ -189,6 +194,17 @@ public class WebSocketServiceDispatcher extends HTTPServiceDispatcher {
         }
 
         return null;
+    }
+
+    private boolean isWebSocketClientService(Service service) {
+        AnnotationAttachment[] annotations = service.getAnnotations();
+        for (AnnotationAttachment annotation: annotations) {
+            if (annotation.getPkgName().equals(Constants.PROTOCOL_WEBSOCKET) &&
+                    annotation.getName().equals(Constants.ANNOTATION_NAME_WEBSOCKET_CLIENT_SERVICE)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String refactorUri(String uri) {
