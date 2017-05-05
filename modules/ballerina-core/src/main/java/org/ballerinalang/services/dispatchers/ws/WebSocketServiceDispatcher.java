@@ -20,9 +20,7 @@
 package org.ballerinalang.services.dispatchers.ws;
 
 import org.ballerinalang.bre.Context;
-import org.ballerinalang.model.AnnotationAttachment;
 import org.ballerinalang.model.Service;
-import org.ballerinalang.services.dispatchers.http.Constants;
 import org.ballerinalang.services.dispatchers.http.HTTPServiceDispatcher;
 import org.ballerinalang.services.dispatchers.http.HTTPServicesRegistry;
 import org.ballerinalang.services.dispatchers.uri.URIUtil;
@@ -47,28 +45,19 @@ public class WebSocketServiceDispatcher extends HTTPServiceDispatcher {
         boolean isServer = (boolean) cMsg.getProperty(Constants.IS_WEBSOCKET_SERVER);
 
         if (isServer) {
-            String serviceUri = (String) cMsg.getProperty(Constants.TO);
-            serviceUri = refactorUri(serviceUri);
+            String serviceUri = (String) cMsg.getProperty(org.ballerinalang.services.dispatchers.http.Constants.TO);
+            serviceUri = WebSocketServicesRegistry.getInstance().refactorUri(serviceUri);
             if (serviceUri == null) {
                 throw new BallerinaException("No service found to dispatch");
             }
-            String basePath = URIUtil.getFirstPathSegment(serviceUri);
-            Service service = HTTPServicesRegistry.getInstance().
-                    getService(interfaceId, Constants.DEFAULT_BASE_PATH + basePath);
+
+            Service service = WebSocketServicesRegistry.getInstance().getServiceEndpoint(interfaceId, serviceUri);
 
             if (service == null) {
                 throw new BallerinaException("No service found to handle message for " + serviceUri);
-            }
-
-            String webSocketUpgradePath = findWebSocketUpgradePath(service);
-            if (webSocketUpgradePath == null) {
-                throw new BallerinaException("No service found to handle message for " + serviceUri);
-            }
-
-            if (webSocketUpgradePath.equals(serviceUri)) {
+            } else {
                 return service;
             }
-            throw new BallerinaException("No service found to handle message for " + serviceUri);
 
         } else {
             String clientID = (String) cMsg.getProperty(Constants.WEBSOCKET_CLIENT_ID);
@@ -76,7 +65,7 @@ public class WebSocketServiceDispatcher extends HTTPServiceDispatcher {
                 throw new BallerinaException("Error in message dispatching. Cannot find a service to dispatch");
             }
 
-            Service clientService = WebSocketClientServicesRegistry.getInstance().getServiceByClientID(clientID);
+            Service clientService = WebSocketClientsRegistry.getInstance().getServiceByClientID(clientID);
             if (clientService == null) {
                 throw new BallerinaException("Cannot find a client service to dispatch the incoming client message");
             }
@@ -92,14 +81,7 @@ public class WebSocketServiceDispatcher extends HTTPServiceDispatcher {
 
     @Override
     public void serviceRegistered(Service service) {
-        if (findWebSocketUpgradePath(service) != null && !isWebSocketClientService(service)) {
-            super.serviceRegistered(service);
-        } else if (isWebSocketClientService(service)) {
-            WebSocketClientServicesRegistry.getInstance().addService(service);
-        } else if (findWebSocketUpgradePath(service) != null && isWebSocketClientService(service)) {
-            throw new BallerinaException("Error in annotations: Cannot define @ws:WebSocketUpgradePath and " +
-                                                 "@ws:ClientService in the same service.");
-        }
+        WebSocketServicesRegistry.getInstance().registerService(service);
     }
 
     @Override
@@ -187,38 +169,4 @@ public class WebSocketServiceDispatcher extends HTTPServiceDispatcher {
                 throw new BallerinaException("Cannot define @WebSocketPathUpgrade without @BasePath");
             }
 
-            String basePath = refactorUri(basePathAnnotation.getValue());
-            String websocketUpgradePath = refactorUri(websocketUpgradePathAnnotation.getValue());
-
-            return refactorUri(basePath.concat(websocketUpgradePath));
-        }
-
-        return null;
-    }
-
-    private boolean isWebSocketClientService(Service service) {
-        AnnotationAttachment[] annotations = service.getAnnotations();
-        for (AnnotationAttachment annotation: annotations) {
-            if (annotation.getPkgName().equals(Constants.PROTOCOL_WEBSOCKET) &&
-                    annotation.getName().equals(Constants.ANNOTATION_NAME_WEBSOCKET_CLIENT_SERVICE)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private String refactorUri(String uri) {
-        if (uri.startsWith("\"")) {
-            uri = uri.substring(1, uri.length() - 1);
-        }
-
-        if (!uri.startsWith("/")) {
-            uri = "/".concat(uri);
-        }
-
-        if (uri.endsWith("/")) {
-            uri = uri.substring(0, uri.length() - 1);
-        }
-        return uri;
-    }
 }
