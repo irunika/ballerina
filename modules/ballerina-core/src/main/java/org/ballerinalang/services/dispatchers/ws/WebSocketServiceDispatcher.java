@@ -64,8 +64,9 @@ public class WebSocketServiceDispatcher extends HTTPServiceDispatcher {
             if (clientID == null) {
                 throw new BallerinaException("Error in message dispatching. Cannot find a service to dispatch");
             }
-
-            Service clientService = WebSocketClientServicesRegistry.getInstance().getServiceByClientID(clientID);
+            String clientServiceName = ConnectorControllerRegistry.getInstance().
+                    getConnectorController(clientID).getClientServiceName();
+            Service clientService = WebSocketServicesRegistry.getInstance().getClientService(clientServiceName);
             if (clientService == null) {
                 throw new BallerinaException("Cannot find a client service to dispatch the incoming client message");
             }
