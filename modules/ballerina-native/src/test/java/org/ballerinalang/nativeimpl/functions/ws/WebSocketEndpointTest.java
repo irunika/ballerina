@@ -63,7 +63,7 @@ public class WebSocketEndpointTest {
         Assert.assertEquals(session1.getTextReceived(), expectedText);
 
         // Checking the Error handler response for invalid URL
-        Assert.assertTrue(errorSession.isConnectionClose());
+        Assert.assertFalse(errorSession.isOpen());
         CloseReason closeReason = errorSession.getCloseReason();
         Assert.assertTrue(closeReason != null);
         Assert.assertEquals(closeReason.getCloseCode().getCode(), 1001);

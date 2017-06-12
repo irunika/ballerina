@@ -40,11 +40,12 @@ public class MockWebSocketSession implements Session {
     private final String id;
     private final MockBasicRemoteEndpoint remoteEndpoint;
     private CloseReason closeReason = null;
-    private boolean isConnectionClose = false;
+    private boolean isOpen;
 
     public MockWebSocketSession(String id) {
         this.id = id;
         remoteEndpoint = new MockBasicRemoteEndpoint();
+        isOpen = true;
     }
 
     public String getTextReceived() {
@@ -53,10 +54,6 @@ public class MockWebSocketSession implements Session {
 
     public ByteBuffer getBufferReceived() {
         return remoteEndpoint.getBufferReceived();
-    }
-
-    public boolean isConnectionClose() {
-        return isConnectionClose;
     }
 
     public CloseReason getCloseReason() {
@@ -115,7 +112,7 @@ public class MockWebSocketSession implements Session {
 
     @Override
     public boolean isOpen() {
-        return false;
+        return isOpen;
     }
 
     @Override
@@ -165,12 +162,12 @@ public class MockWebSocketSession implements Session {
 
     @Override
     public void close() throws IOException {
-        this.isConnectionClose = true;
+        this.isOpen = false;
     }
 
     @Override
     public void close(CloseReason closeReason) throws IOException {
-        this.isConnectionClose = true;
+        this.isOpen = false;
         this.closeReason = closeReason;
     }
 
