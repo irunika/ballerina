@@ -18,54 +18,50 @@
 
 package org.ballerinalang.nativeimpl.net.wssession;
 
-
 import org.ballerinalang.bre.Context;
 import org.ballerinalang.model.types.TypeEnum;
+import org.ballerinalang.model.values.BStruct;
 import org.ballerinalang.model.values.BValue;
+import org.ballerinalang.natives.annotations.Argument;
 import org.ballerinalang.natives.annotations.Attribute;
 import org.ballerinalang.natives.annotations.BallerinaAnnotation;
 import org.ballerinalang.natives.annotations.BallerinaFunction;
-import org.ballerinalang.natives.annotations.ReturnType;
-import org.ballerinalang.services.dispatchers.ws.Constants;
 import org.ballerinalang.util.exceptions.BallerinaException;
-import org.wso2.carbon.messaging.CarbonMessage;
 
+import java.io.IOException;
 import javax.websocket.Session;
 
 /**
- * This is the function to get Session of WebSocket for user.
+ * Push text to given WebSocket client.
  */
 @BallerinaFunction(
         packageName = "ballerina.net.wssession",
-        functionName = "getSession",
-        returnType = {@ReturnType(type = TypeEnum.STRUCT, structType = "Session",
-                                  structPackage = "ballerina.net.wssession")},
+        functionName = "pushText",
+        args = {@Argument(name = "session", type = TypeEnum.STRUCT, structType = "Session",
+                          structPackage = "ballerina.net.wssession"),
+                @Argument(name = "text", type = TypeEnum.STRING)},
         isPublic = true
 )
 @BallerinaAnnotation(annotationName = "Description",
-                     attributes = { @Attribute(name = "value", value = "This gives the session of the " +
-                             "current WebSocket client")})
+                     attributes = { @Attribute(name = "value", value = "Push text to required client")})
+@BallerinaAnnotation(annotationName = "Param",
+                     attributes = {@Attribute(name = "session", value = "WebSocket Session")})
+@BallerinaAnnotation(annotationName = "Param",
+                     attributes = {@Attribute(name = "text", value = "Text which should be sent")})
 @BallerinaAnnotation(annotationName = "Return",
-                     attributes = {@Attribute(name = "Session", value = "WebSocket session") })
-public class GetSession extends AbstractWsSessionNativeFunction {
-
+                     attributes = {@Attribute(name = "string", value = "ID of the given session") })
+public class PushText extends AbstractWsSessionNativeFunction {
     @Override
     public BValue[] execute(Context context) {
+        BStruct sessionStruct  = ((BStruct) getRefArgument(context, 0));
+        String text = getStringArgument(context, 0);
+        Session session = getSession(sessionStruct);
 
-        CarbonMessage carbonMessage = context.getCarbonMessage();
-
-        String protocol = (String) carbonMessage.getProperty(Constants.PROTOCOL);
-        if (!Constants.PROTOCOL_WEBSOCKET.equals(protocol)) {
-            throw new BallerinaException("Cannot find WebSocket Session");
+        try {
+            session.getBasicRemote().sendText(text);
+        } catch (IOException e) {
+            throw new BallerinaException("IO exception occurred during broadcasting text", e, context);
         }
-
-        boolean isServer = (boolean) carbonMessage.getProperty(Constants.IS_WEBSOCKET_SERVER);
-        if (!isServer) {
-            throw new BallerinaException("Cannot define a session for client service");
-        }
-
-        Session session = (Session) carbonMessage.getProperty(Constants.WEBSOCKET_SESSION);
-        return new BValue[]{createSessionStruct(context, session)};
+        return VOID_RETURN;
     }
-
 }

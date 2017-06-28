@@ -49,6 +49,16 @@ public class WebSocketConnectionManager {
     }
 
     /**
+     * Retrieve the session of the given session ID.
+     *
+     * @param sessionID session ID of the required session.
+     * @return the {@link Session} relates to the given session ID.
+     */
+    public Session getSession(String sessionID) {
+        return sessions.get(sessionID);
+    }
+
+    /**
      * Add {@link Session} to session the broadcast group of a given service.
      *
      * @param serviceName name of the service.
