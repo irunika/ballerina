@@ -18,6 +18,7 @@
 
 package org.ballerinalang.services.dispatchers.ws;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,12 +30,14 @@ import javax.websocket.Session;
  */
 public class WebSocketConnectionManager {
 
-    // Map<serviceName, Map<sessionId, session>>
-    private final Map<String, Map<String, Session>> broadcastSessions = new ConcurrentHashMap<>();
+    // Map <sessionId, session>
+    private final Map<String, Session> sessions = new ConcurrentHashMap<>();
+    // Map<serviceName, List<sessionId>>
+    private final Map<String, List<String>> broadcastSessions = new ConcurrentHashMap<>();
     // Map<groupName, Map<sessionId, session>>
-    private final Map<String, Map<String, Session>> connectionGroups = new ConcurrentHashMap<>();
-    // Map<NameToStoreConnection, Session>
-    private final Map<String, Session> connectionStore = new ConcurrentHashMap<>();
+    private final Map<String, List<String>> connectionGroups = new ConcurrentHashMap<>();
+    // Map<NameToStoreConnection, sessionId>
+    private final Map<String, String> connectionStore = new ConcurrentHashMap<>();
 
     private static final WebSocketConnectionManager sessionManager = new WebSocketConnectionManager();
 
@@ -52,12 +55,13 @@ public class WebSocketConnectionManager {
      * @param session {@link Session} to add to the broadcast group.
      */
     public void addConnectionToBroadcast(String serviceName, Session session) {
+        sessions.put(session.getId(), session);
         if (broadcastSessions.containsKey(serviceName)) {
-            broadcastSessions.get(serviceName).put(session.getId(), session);
+            broadcastSessions.get(serviceName).add(session.getId());
         } else {
-            Map<String, Session> sessionMap = new ConcurrentHashMap<>();
-            sessionMap.put(session.getId(), session);
-            broadcastSessions.put(serviceName, sessionMap);
+            List<String> sessionList = new LinkedList<>();
+            sessionList.add(session.getId());
+            broadcastSessions.put(serviceName, sessionList);
         }
     }
 
@@ -82,8 +86,8 @@ public class WebSocketConnectionManager {
      */
     public List<Session> getBroadcastConnectionList(String serviceName) {
         if (broadcastSessions.containsKey(serviceName)) {
-            return broadcastSessions.get(serviceName).entrySet().stream()
-                    .map(Map.Entry::getValue)
+            return broadcastSessions.get(serviceName).stream()
+                    .map(sessionID -> sessions.get(sessionID))
                     .collect(Collectors.toList());
         } else {
             return null;
@@ -98,11 +102,11 @@ public class WebSocketConnectionManager {
      */
     public void addConnectionToGroup(String groupName, Session session) {
         if (connectionGroups.containsKey(groupName)) {
-            connectionGroups.get(groupName).put(session.getId(), session);
+            connectionGroups.get(groupName).add(session.getId());
         } else {
-            Map<String, Session> sessionMap = new ConcurrentHashMap<>();
-            sessionMap.put(session.getId(), session);
-            connectionGroups.put(groupName, sessionMap);
+            List<String> sessionList = new LinkedList<>();
+            sessionList.add(session.getId());
+            connectionGroups.put(groupName, sessionList);
         }
     }
 
@@ -144,8 +148,8 @@ public class WebSocketConnectionManager {
      */
     public List<Session> getConnectionGroup(String groupName) {
         if (connectionGroups.containsKey(groupName)) {
-            return connectionGroups.get(groupName).entrySet().stream()
-                    .map(Map.Entry::getValue)
+            return connectionGroups.get(groupName).stream()
+                    .map(sessionID -> sessions.get(sessionID))
                     .collect(Collectors.toList());
         } else {
             return null;
@@ -159,7 +163,7 @@ public class WebSocketConnectionManager {
      * @param session {@link Session} to store.
      */
     public void storeConnection(String connectionName, Session session) {
-        connectionStore.put(connectionName, session);
+        connectionStore.put(connectionName, session.getId());
     }
 
     /**
@@ -183,7 +187,7 @@ public class WebSocketConnectionManager {
      * @return Session of the stored connection if connections is found else return null.
      */
     public Session getStoredConnection(String connectionName) {
-        return connectionStore.get(connectionName);
+        return sessions.get(connectionStore.get(connectionName));
     }
 
     /**
@@ -194,21 +198,20 @@ public class WebSocketConnectionManager {
      * @param session {@link Session} which should be removed from all the places.
      */
     public void removeConnectionFromAll(Session session) {
+        String sessionID = session.getId();
+
+        // Remove session from session map
+        sessions.remove(sessionID);
+
         // Removing session from broadcast sessions map
         broadcastSessions.entrySet().forEach(
-                entry -> entry.getValue().entrySet().removeIf(
-                        innerEntry -> innerEntry.getKey().equals(session.getId())
-                )
-        );
+                entry -> entry.getValue().remove(sessionID));
         //Removing session from groups map
         connectionGroups.entrySet().forEach(
-                entry -> entry.getValue().entrySet().removeIf(
-                        innerEntry -> innerEntry.getKey().equals(session.getId())
-                )
-        );
+                entry -> entry.getValue().remove(sessionID));
         // Removing session from connection store
         connectionStore.entrySet().removeIf(
-                entry -> entry.getValue().equals(session)
+                entry -> entry.getValue().equals(sessionID)
         );
     }
 }
