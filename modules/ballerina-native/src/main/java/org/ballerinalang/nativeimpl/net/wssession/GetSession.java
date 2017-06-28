@@ -20,9 +20,17 @@ package org.ballerinalang.nativeimpl.net.wssession;
 
 
 import org.ballerinalang.bre.Context;
+import org.ballerinalang.model.types.TypeEnum;
+import org.ballerinalang.model.values.BStruct;
 import org.ballerinalang.model.values.BValue;
 import org.ballerinalang.natives.AbstractNativeFunction;
-import org.ballerinalang.services.dispatchers.http.Constants;
+import org.ballerinalang.natives.annotations.Attribute;
+import org.ballerinalang.natives.annotations.BallerinaAnnotation;
+import org.ballerinalang.natives.annotations.BallerinaFunction;
+import org.ballerinalang.natives.annotations.ReturnType;
+import org.ballerinalang.services.dispatchers.ws.Constants;
+import org.ballerinalang.util.codegen.PackageInfo;
+import org.ballerinalang.util.codegen.StructInfo;
 import org.ballerinalang.util.exceptions.BallerinaException;
 import org.wso2.carbon.messaging.CarbonMessage;
 
@@ -31,10 +39,22 @@ import javax.websocket.Session;
 /**
  * This is the function to get Session of WebSocket for user.
  */
+
+@BallerinaFunction(
+        packageName = "ballerina.net.wssession",
+        functionName = "getSession",
+        returnType = {@ReturnType(type = TypeEnum.STRUCT, structType = "Session",
+                                  structPackage = "ballerina.net.wssession")},
+        isPublic = true
+)
+@BallerinaAnnotation(annotationName = "Description",
+                     attributes = { @Attribute(name = "value", value = "This gives the session of the " +
+                             "current WebSocket client")})
 public class GetSession extends AbstractNativeFunction {
 
     @Override
     public BValue[] execute(Context context) {
+
         CarbonMessage carbonMessage = context.getCarbonMessage();
 
         String protocol = (String) carbonMessage.getProperty(Constants.PROTOCOL);
@@ -42,9 +62,25 @@ public class GetSession extends AbstractNativeFunction {
             throw new BallerinaException("Cannot find WebSocket Session");
         }
 
+        boolean isServer = (boolean) carbonMessage.getProperty(Constants.IS_WEBSOCKET_SERVER);
+        if (!isServer) {
+            throw new BallerinaException("Cannot define a session for client service");
+        }
+
         Session session = (Session) carbonMessage.getProperty(Constants.WEBSOCKET_SESSION);
         String sessionID = session.getId();
+        PackageInfo sessionPackageInfo = context.getProgramFile().getPackageInfo(Constants.WS_SESSION_PACKAGE);
+        StructInfo sessionStructInfo = sessionPackageInfo.getStructInfo(Constants.STRUCT_SESSION);
 
-        return null;
+        //create session struct
+        BStruct bStruct = new BStruct(sessionStructInfo.getType());
+        bStruct.setFieldTypes(sessionStructInfo.getFieldTypes());
+        bStruct.init(sessionStructInfo.getFieldCount());
+
+        //Add session Id to the struct as a string
+        bStruct.setStringField(0, sessionID);
+
+        return new BValue[]{bStruct};
     }
+
 }

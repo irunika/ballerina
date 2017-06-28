@@ -49,5 +49,9 @@ public class Constants extends org.ballerinalang.services.dispatchers.http.Const
     public static final String UPGRADE = "Upgrade";
     public static final String WEBSOCKET_UPGRADE = "websocket";
     public static final String CHANNEL_ID = "CHANNEL_ID";
+
+    // WebSocket session related constants
     public static final String WEBSOCKET_SESSION = "WEBSOCKET_SESSION";
+    public static final String WS_SESSION_PACKAGE = "ballerina.net.wssession";
+    public  static final String STRUCT_SESSION = "Session";
 }

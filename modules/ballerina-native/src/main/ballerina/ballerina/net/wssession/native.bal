@@ -1,7 +1,6 @@
-package ballerina.net.ws_session;
+package ballerina.net.wssession;
 
-import ballerina.lang.system;
-import src.main.ballerina.ballerina.doc;
+import ballerina.doc;
 
 struct Session {
     string webSocketSessionID;
