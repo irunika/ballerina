@@ -18,11 +18,13 @@
 
 package org.ballerinalang.services.dispatchers.ws;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import javax.websocket.CloseReason;
 import javax.websocket.Session;
 
 /**
@@ -198,6 +200,26 @@ public class WebSocketConnectionManager {
      */
     public Session getStoredConnection(String connectionName) {
         return sessions.get(connectionStore.get(connectionName));
+    }
+
+    /**
+     * Close the session.
+     * @param sessionID id of the connection.
+     * @throws IOException throws if the closing connection is interrupted.
+     */
+    public void CloseConnection(String sessionID) throws IOException {
+        Session session = sessions.get(sessionID);
+        session.close();
+        removeConnectionFromAll(session);
+    }
+
+    public void CloseConnection(String sessionID, String closeReason, int closeCode) throws IOException {
+        Session session = sessions.get(sessionID);
+        session.close(new CloseReason(
+                () -> closeCode,
+                closeReason
+        ));
+        removeConnectionFromAll(session);
     }
 
     /**
