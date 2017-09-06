@@ -43,10 +43,6 @@ native function getID(Connection conn) (string);
 @doc:Return {value:"string: Negotiated sub protocol"}
 native function getNegotiatedSubProtocol(Connection conn) (string);
 
-@doc:Description {value:"Check whether the extensions are allowed from the server"}
-@doc:Return {value:"boolean: true if Extensions are allowed for the connection"}
-native function allowExtensions(Connection conn) (boolean);
-
 @doc:Description {value:"Check whether the connection is secured or not"}
 @doc:Return {value:"boolean: true if the connection is secured"}
 native function isSecuredConnection(Connection conn) (boolean);

@@ -18,9 +18,13 @@
 
 package org.ballerinalang.services.dispatchers.ws;
 
+import org.ballerinalang.model.types.BStructType;
+import org.ballerinalang.model.values.BStruct;
 import org.ballerinalang.runtime.ServerConnectorMessageHandler;
+import org.ballerinalang.util.codegen.PackageInfo;
 import org.ballerinalang.util.codegen.ResourceInfo;
 import org.ballerinalang.util.codegen.ServiceInfo;
+import org.ballerinalang.util.codegen.StructInfo;
 import org.ballerinalang.util.exceptions.BallerinaException;
 import org.wso2.carbon.messaging.CarbonMessage;
 import org.wso2.carbon.transport.http.netty.contract.websocket.WebSocketBinaryMessage;
@@ -33,6 +37,8 @@ import org.wso2.carbon.transport.http.netty.contract.websocket.WebSocketTextMess
 import org.wso2.carbon.transport.http.netty.message.HTTPMessageUtil;
 
 import java.net.ProtocolException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.websocket.Session;
 
 /**
@@ -41,6 +47,9 @@ import javax.websocket.Session;
  * @since 0.93
  */
 public class BallerinaWebSocketConnectorListener implements WebSocketConnectorListener {
+
+    // Map <ID, ws:Connection>
+    Map<String, BStruct> wsConnectionMap = new ConcurrentHashMap<>();
 
     @Override
     public void onMessage(WebSocketInitMessage webSocketInitMessage) {

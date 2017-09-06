@@ -16,52 +16,54 @@
  *  under the License.
  */
 
-package org.ballerinalang.nativeimpl.net.ws.connectionstore;
+package org.ballerinalang.nativeimpl.net.ws;
 
 import org.ballerinalang.bre.Context;
 import org.ballerinalang.model.types.TypeEnum;
+import org.ballerinalang.model.values.BString;
+import org.ballerinalang.model.values.BStruct;
 import org.ballerinalang.model.values.BValue;
 import org.ballerinalang.natives.AbstractNativeFunction;
 import org.ballerinalang.natives.annotations.Argument;
 import org.ballerinalang.natives.annotations.Attribute;
 import org.ballerinalang.natives.annotations.BallerinaAnnotation;
 import org.ballerinalang.natives.annotations.BallerinaFunction;
+import org.ballerinalang.natives.annotations.ReturnType;
 import org.ballerinalang.services.dispatchers.ws.Constants;
-import org.ballerinalang.services.dispatchers.ws.WebSocketConnectionManager;
 import org.ballerinalang.util.exceptions.BallerinaException;
-import org.wso2.carbon.messaging.CarbonMessage;
 
 import javax.websocket.Session;
 
-
 /**
- * Store the connection globally for the use of other services.
+ * Send text to the same client who sent the message to the given WebSocket Upgrade Path.
  */
+
 @BallerinaFunction(
         packageName = "ballerina.net.ws",
-        functionName = "storeConnection",
-        args = {
-                @Argument(name = "connectionName", type = TypeEnum.STRING)
-        },
+        functionName = "getNegotiatedSubProtocol",
+        args = {@Argument(name = "session", type = TypeEnum.STRUCT, structType = "Connection",
+                          structPackage = "ballerina.net.ws")},
+        returnType = {@ReturnType(type = TypeEnum.STRING)},
         isPublic = true
 )
 @BallerinaAnnotation(annotationName = "Description",
-                     attributes = { @Attribute(name = "value", value = "Store the connection globally for the " +
-                             "use of other services.") })
+                     attributes = { @Attribute(name = "value", value = "This pushes text from server to the the same " +
+                             "client who sent the message.") })
 @BallerinaAnnotation(annotationName = "Param",
-                     attributes = { @Attribute(name = "connectionName", value = "Name of the connection") })
-public class StoreConnection extends AbstractNativeFunction {
+                     attributes = { @Attribute(name = "text", value = "Text which should be sent") })
+public class GetNegotiatedSubProtocol extends AbstractNativeFunction {
+
     @Override
     public BValue[] execute(Context context) {
 
-        if (context.getServiceInfo() == null) {
-            throw new BallerinaException("This function is only working with services");
+        if (context.getServiceInfo() == null ||
+                !context.getServiceInfo().getProtocolPkgPath().equals(Constants.WEBSOCKET_PACKAGE_PATH)) {
+            throw new BallerinaException("This function is only working with WebSocket services");
         }
 
-        CarbonMessage carbonMessage = context.getCarbonMessage();
-        String connectionName = getStringArgument(context, 0);
-        Session session = (Session) carbonMessage.getProperty(Constants.WEBSOCKET_SERVER_SESSION);
-        WebSocketConnectionManager.getInstance().storeConnection(connectionName, session);
-        return VOID_RETURN;
+        BStruct wsConnection = (BStruct) getRefArgument(context, 0);
+        Session session = (Session) wsConnection.getNativeData(Constants.WEBSOCKET_SESSION);
+        String negotiatedSubProtocol = session.getNegotiatedSubprotocol();
+        return getBValues(new BString(negotiatedSubProtocol));
     }
 }

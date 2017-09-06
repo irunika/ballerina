@@ -35,6 +35,8 @@ public class Constants extends org.ballerinalang.services.dispatchers.http.Const
 
     public static final String WEBSOCKET_PACKAGE_PATH = "ballerina.net.ws";
 
+    public static final String WEBSOCKET_CONNECTION_STRUCT = "Connection";
+
     public static final String PROTOCOL_WEBSOCKET = "ws";
     public static final String ANNOTATION_NAME_WEBSOCKET_UPGRADE_PATH = "WebSocketUpgradePath";
     public static final String ANNOTATION_NAME_WEBSOCKET_CLIENT_SERVICE = "ClientService";
@@ -51,6 +53,7 @@ public class Constants extends org.ballerinalang.services.dispatchers.http.Const
     public static final String UPGRADE = "Upgrade";
     public static final String WEBSOCKET_UPGRADE = "websocket";
     public static final String CHANNEL_ID = "CHANNEL_ID";
+    public static final String WEBSOCKET_SESSION = "WEBSOCKET_SESSION";
     public static final String WEBSOCKET_SERVER_SESSION = "WEBSOCKET_SERVER_SESSION";
     public static final String WEBSOCKET_CLIENT_SESSION = "WEBSOCKET_CLIENT_SESSION";
     public static final String WEBSOCKET_CLIENT_SESSIONS_LIST = "WEBSOCKET_CLIENT_SESSIONS_LIST";

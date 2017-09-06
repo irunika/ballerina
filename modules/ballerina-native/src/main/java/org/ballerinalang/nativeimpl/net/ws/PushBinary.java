@@ -16,10 +16,11 @@
  *  under the License.
  */
 
-package org.ballerinalang.nativeimpl.net.ws.connectiongroup;
+package org.ballerinalang.nativeimpl.net.ws;
 
 import org.ballerinalang.bre.Context;
 import org.ballerinalang.model.types.TypeEnum;
+import org.ballerinalang.model.values.BStruct;
 import org.ballerinalang.model.values.BValue;
 import org.ballerinalang.natives.AbstractNativeFunction;
 import org.ballerinalang.natives.annotations.Argument;
@@ -27,41 +28,46 @@ import org.ballerinalang.natives.annotations.Attribute;
 import org.ballerinalang.natives.annotations.BallerinaAnnotation;
 import org.ballerinalang.natives.annotations.BallerinaFunction;
 import org.ballerinalang.services.dispatchers.ws.Constants;
-import org.ballerinalang.services.dispatchers.ws.WebSocketConnectionManager;
 import org.ballerinalang.util.exceptions.BallerinaException;
-import org.wso2.carbon.messaging.CarbonMessage;
 
+import java.nio.ByteBuffer;
 import javax.websocket.Session;
 
 /**
- * This adds connection to a connection group so those connections become global and can be used in other services
- * as well.
+ * Send text to the same client who sent the message to the given WebSocket Upgrade Path.
  */
+
 @BallerinaFunction(
         packageName = "ballerina.net.ws",
-        functionName = "addConnectionToGroup",
-        args = {
-                @Argument(name = "connectionGroupName", type = TypeEnum.STRING)
-        },
+        functionName = "pushBinary",
+        args = {@Argument(name = "session", type = TypeEnum.STRUCT, structType = "Connection",
+                          structPackage = "ballerina.net.ws"),
+                @Argument(name = "binaryData", type = TypeEnum.BLOB)},
         isPublic = true
 )
 @BallerinaAnnotation(annotationName = "Description",
-                     attributes = { @Attribute(name = "value", value = "This pushes text from server to all the " +
-                             "connected clients of the service.") })
+                     attributes = { @Attribute(name = "value", value = "This pushes binary data from server to the " +
+                             "the same client who sent the message.") })
 @BallerinaAnnotation(annotationName = "Param",
-                     attributes = { @Attribute(name = "connectionGroupName", value = "Name of the connection group") })
-public class AddConnectionToGroup extends AbstractNativeFunction {
+                     attributes = { @Attribute(name = "binaryData", value = "Binary data which should be sent") })
+public class PushBinary extends AbstractNativeFunction {
+
     @Override
     public BValue[] execute(Context context) {
 
-        if (context.getServiceInfo() == null) {
-            throw new BallerinaException("This function is only working with services");
+        if (context.getServiceInfo() == null ||
+                !context.getServiceInfo().getProtocolPkgPath().equals(Constants.WEBSOCKET_PACKAGE_PATH)) {
+            throw new BallerinaException("This function is only working with WebSocket services");
         }
 
-        CarbonMessage carbonMessage = context.getCarbonMessage();
-        Session session = (Session) carbonMessage.getProperty(Constants.WEBSOCKET_SERVER_SESSION);
-        String connectionGroupName = getStringArgument(context, 0);
-        WebSocketConnectionManager.getInstance().addConnectionToGroup(connectionGroupName, session);
+        try {
+            BStruct wsConnection = (BStruct) getRefArgument(context, 0);
+            Session session = (Session) wsConnection.getNativeData(Constants.WEBSOCKET_SESSION);
+            byte[] binaryData = getBlobArgument(context, 0);
+            session.getBasicRemote().sendBinary(ByteBuffer.wrap(binaryData));
+        } catch (Throwable e) {
+            throw new BallerinaException("Cannot send the message. Error occurred.");
+        }
         return VOID_RETURN;
     }
 }
