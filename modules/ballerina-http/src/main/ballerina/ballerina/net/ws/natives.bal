@@ -34,7 +34,7 @@ struct PongFrame {
 struct HandshakeConnection {
     string connectionID;
     boolean isSecure;
-    map<string> upgradeHeaders;
+    map upgradeHeaders;
 }
 @doc:Description {value:"Cancel the handshake"}
 @doc:Param {value:"statusCode: Status code for closing the connection"}
