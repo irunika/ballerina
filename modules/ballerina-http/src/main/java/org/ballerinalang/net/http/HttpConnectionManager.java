@@ -61,10 +61,10 @@ import java.util.logging.LogManager;
 public class HttpConnectionManager {
 
     private static HttpConnectionManager instance = new HttpConnectionManager();
-    private Map<String, org.wso2.carbon.transport.http.netty.contract.ServerConnector>
+    private Map<String, ServerConnector>
             startupDelayedHTTPServerConnectors = new HashMap<>();
 
-    private Map<String, org.wso2.carbon.transport.http.netty.contract.ServerConnector>
+    private Map<String, ServerConnector>
             startedHTTPServerConnectors = new HashMap<>();
     private Map<String, HttpServerConnectorContext>
             serverConnectorPool = new HashMap<>();
@@ -103,7 +103,7 @@ public class HttpConnectionManager {
         return listenerConfigurationSet;
     }
 
-    public org.wso2.carbon.transport.http.netty.contract.ServerConnector createHttpServerConnector(
+    public ServerConnector createHttpServerConnector(
             ListenerConfiguration listenerConfig) {
         String listenerInterface = listenerConfig.getHost() + ":" + listenerConfig.getPort();
         HttpServerConnectorContext httpServerConnectorContext =
@@ -123,7 +123,7 @@ public class HttpConnectionManager {
 
         serverBootstrapConfiguration = HTTPConnectorUtil
                 .getServerBootstrapConfiguration(trpConfig.getTransportProperties());
-        org.wso2.carbon.transport.http.netty.contract.ServerConnector serverConnector =
+        ServerConnector serverConnector =
                 httpConnectorFactory.createServerConnector(serverBootstrapConfiguration, listenerConfig);
 
         httpServerConnectorContext = new HttpServerConnectorContext(serverConnector, listenerConfig);
@@ -139,7 +139,7 @@ public class HttpConnectionManager {
      * @param serverConnector ServerConnector
      */
     public void addStartupDelayedHTTPServerConnector(String id,
-            org.wso2.carbon.transport.http.netty.contract.ServerConnector serverConnector) {
+            ServerConnector serverConnector) {
         startupDelayedHTTPServerConnectors.put(id, serverConnector);
     }
 
@@ -185,11 +185,11 @@ public class HttpConnectionManager {
     }
 
     private static class HttpServerConnectorContext {
-        private org.wso2.carbon.transport.http.netty.contract.ServerConnector serverConnector;
+        private ServerConnector serverConnector;
         private ListenerConfiguration listenerConfiguration;
         private int referenceCount = 0;
 
-        public HttpServerConnectorContext(org.wso2.carbon.transport.http.netty.contract.ServerConnector
+        public HttpServerConnectorContext(ServerConnector
                 serverConnector, ListenerConfiguration listenerConfiguration) {
             this.serverConnector = serverConnector;
             this.listenerConfiguration = listenerConfiguration;
@@ -203,7 +203,7 @@ public class HttpConnectionManager {
             this.referenceCount--;
         }
 
-        public org.wso2.carbon.transport.http.netty.contract.ServerConnector getServerConnector() {
+        public ServerConnector getServerConnector() {
             return this.serverConnector;
         }
 
