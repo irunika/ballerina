@@ -18,26 +18,32 @@
 
 package org.ballerinalang.net.uri.parser;
 
-
-import org.ballerinalang.net.uri.URITemplateException;
-
-import java.util.List;
-
 /**
- * SimpleStringExpression represents path segments that have single path param.
- * ex - /{foo}/
+ * Interface to hold various node items.
  *
- * @param <DataElementType> Specific data element type created by the user.
+ * @param <DataType> Type of data which should be stored in the node.
+ * @param <CheckerType> Additional checker for node which can be used for additional checks before returning the <ITEM>.
  */
-public class SimpleStringExpression<DataElementType extends DataElement>
-        extends SimpleSplitStringExpression<DataElementType> {
+public interface DataElement<DataType, CheckerType> {
 
-    public SimpleStringExpression(DataElementType dataElement, String token) throws URITemplateException {
-        super(dataElement, token);
-    }
+    /**
+     * Set the node item.
+     *
+     * @param data data to be stored.
+     */
+    void setData(DataType data);
 
-    @Override
-    protected boolean isEndCharacter(List<? extends Node> childNodesList, Character endCharacter) {
-        return endCharacter == '/';
-    }
+    /**
+     * Get the stored data.
+     *
+     * @param checker Checker for extra checks of the item.
+     * @return the item stored in the Node Item.
+     */
+    DataType getData(CheckerType checker);
+
+    /**
+     * Remove the data of the data element.
+     */
+    void clearData();
+
 }
