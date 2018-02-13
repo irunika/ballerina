@@ -164,20 +164,32 @@ public class HttpUtil {
      */
     public static BValue[] getEntity(Context context, AbstractNativeFunction abstractNativeFunction, boolean isRequest,
                                      boolean isEntityBodyRequired) {
-        BStruct httpMessageStruct = (BStruct) abstractNativeFunction.getRefArgument(context, HTTP_MESSAGE_INDEX);
-        BStruct entity = (BStruct) httpMessageStruct.getNativeData(MESSAGE_ENTITY);
-        boolean isEntityBodyAvailable = false;
+        try {
+            BStruct httpMessageStruct = (BStruct) abstractNativeFunction.getRefArgument(context, HTTP_MESSAGE_INDEX);
+            BStruct entity = (BStruct) httpMessageStruct.getNativeData(MESSAGE_ENTITY);
+            boolean isEntityBodyAvailable = false;
 
-        if (httpMessageStruct.getNativeData(IS_ENTITY_BODY_PRESENT) != null) {
-            isEntityBodyAvailable = (Boolean) httpMessageStruct.getNativeData(IS_ENTITY_BODY_PRESENT);
+            if (httpMessageStruct.getNativeData(IS_ENTITY_BODY_PRESENT) != null) {
+                isEntityBodyAvailable = (Boolean) httpMessageStruct.getNativeData(IS_ENTITY_BODY_PRESENT);
+            }
+            if (entity != null && isEntityBodyRequired && !isEntityBodyAvailable) {
+                populateEntityBody(context, httpMessageStruct, entity, isRequest);
+            }
+            if (entity == null) {
+                entity = createNewEntity(context, httpMessageStruct);
+            }
+            return abstractNativeFunction.getBValues(entity);
+        } catch (Throwable throwable) {
+            return new BValue[]{null, createEntityBodyError(context, throwable)};
         }
-        if (entity != null && isEntityBodyRequired && !isEntityBodyAvailable) {
-            populateEntityBody(context, httpMessageStruct, entity, isRequest);
-        }
-        if (entity == null) {
-            entity = createNewEntity(context, httpMessageStruct);
-        }
-        return abstractNativeFunction.getBValues(entity);
+    }
+
+    private static BStruct createEntityBodyError(Context context, Throwable throwable) {
+        BStruct entityBodyErrorStruct = ConnectorUtils.createAndGetStruct(
+                context, org.ballerinalang.mime.util.Constants.ENTITY_BODY_ERROR,
+                org.ballerinalang.mime.util.Constants.PROTOCOL_PACKAGE_MIME);
+        entityBodyErrorStruct.setStringField(0, throwable.getMessage());
+        return entityBodyErrorStruct;
     }
 
     /**

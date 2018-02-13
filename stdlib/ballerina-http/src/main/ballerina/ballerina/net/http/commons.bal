@@ -36,3 +36,21 @@ function setHeaderToEntity (mime:Entity entity, string headerName, string header
     string[] valueArray = [headerValue];
     entity.headers[headerName] = valueArray;
 }
+
+function getValidatedEntity(InRequest request, string expectedType) (mime:Entity, mime:EntityBodyError) {
+    var entity, error = request.getEntity();
+    if (error != null) {
+        return null, error;
+    }
+    string contentType = request.getHeader(mime:CONTENT_TYPE);
+    string[] contentTypeSegments = contentType.split("/");
+    if (lengthof contentTypeSegments == 2) {
+
+    }
+    if (request.getHeader(mime:CONTENT_TYPE) != expectedType) {
+        mime:EntityBodyError err = {};
+        err.msg = string `Expected {{expectedType}} but found {{request.getHeader(mime:CONTENT_TYPE)}}`;
+        return null, err;
+    }
+    return entity, null;
+}

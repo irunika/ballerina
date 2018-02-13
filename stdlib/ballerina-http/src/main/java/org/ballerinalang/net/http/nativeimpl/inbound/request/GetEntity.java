@@ -19,6 +19,7 @@
 package org.ballerinalang.net.http.nativeimpl.inbound.request;
 
 import org.ballerinalang.bre.Context;
+import org.ballerinalang.mime.util.Constants;
 import org.ballerinalang.model.types.TypeKind;
 import org.ballerinalang.model.values.BValue;
 import org.ballerinalang.natives.AbstractNativeFunction;
@@ -37,7 +38,9 @@ import org.ballerinalang.net.http.HttpUtil;
                    receiver = @Receiver(type = TypeKind.STRUCT,
                                         structType = "InRequest",
                                         structPackage = "ballerina.net.http"),
-                   returnType = { @ReturnType(type = TypeKind.STRUCT) },
+                   returnType = { @ReturnType(type = TypeKind.STRUCT),
+                                  @ReturnType(type = TypeKind.STRUCT, structType = "EntityBodyError",
+                                              structPackage = Constants.PROTOCOL_PACKAGE_MIME) },
                    isPublic = true)
 public class GetEntity extends AbstractNativeFunction {
     @Override

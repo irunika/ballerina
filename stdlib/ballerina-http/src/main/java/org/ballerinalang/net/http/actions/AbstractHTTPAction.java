@@ -22,6 +22,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import org.ballerinalang.bre.Context;
 import org.ballerinalang.connector.api.AbstractNativeAction;
 import org.ballerinalang.connector.api.BallerinaConnectorException;
+import org.ballerinalang.connector.api.ConnectorUtils;
 import org.ballerinalang.mime.util.EntityBodyHandler;
 import org.ballerinalang.mime.util.MimeUtil;
 import org.ballerinalang.mime.util.MultipartDataSource;
@@ -337,10 +338,10 @@ public abstract class AbstractHTTPAction extends AbstractNativeAction {
 
         @Override
         public void onMessage(HTTPCarbonMessage httpCarbonMessage) {
-            BStruct inboundResponse = createStruct(this.context, Constants.IN_RESPONSE,
+            BStruct inboundResponse = ConnectorUtils.createAndGetStruct(this.context, Constants.IN_RESPONSE,
                     Constants.PROTOCOL_PACKAGE_HTTP);
-            BStruct entity = createStruct(this.context, Constants.ENTITY, PROTOCOL_PACKAGE_MIME);
-            BStruct mediaType = createStruct(this.context, MEDIA_TYPE, PROTOCOL_PACKAGE_MIME);
+            BStruct entity = ConnectorUtils.createAndGetStruct(this.context, Constants.ENTITY, PROTOCOL_PACKAGE_MIME);
+            BStruct mediaType = ConnectorUtils.createAndGetStruct(this.context, MEDIA_TYPE, PROTOCOL_PACKAGE_MIME);
             HttpUtil.populateInboundResponse(inboundResponse, entity, mediaType, httpCarbonMessage);
             ballerinaFuture.notifyReply(inboundResponse);
         }
@@ -371,8 +372,8 @@ public abstract class AbstractHTTPAction extends AbstractNativeAction {
         }
 
         private void notifyError(Throwable throwable) {
-            BStruct httpConnectorError = createStruct(context, Constants.HTTP_CONNECTOR_ERROR,  Constants
-                    .PROTOCOL_PACKAGE_HTTP);
+            BStruct httpConnectorError = ConnectorUtils.createAndGetStruct(
+                    context, Constants.HTTP_CONNECTOR_ERROR, Constants.PROTOCOL_PACKAGE_HTTP);
             httpConnectorError.setStringField(0, throwable.getMessage());
             if (throwable instanceof ClientConnectorException) {
                 ClientConnectorException clientConnectorException = (ClientConnectorException) throwable;
@@ -380,14 +381,6 @@ public abstract class AbstractHTTPAction extends AbstractNativeAction {
             }
 
             ballerinaFuture.notifyReply(null, httpConnectorError);
-        }
-
-        private BStruct createStruct(Context context, String structName, String protocolPackage) {
-            PackageInfo httpPackageInfo = context.getProgramFile()
-                    .getPackageInfo(protocolPackage);
-            StructInfo structInfo = httpPackageInfo.getStructInfo(structName);
-            BStructType structType = structInfo.getType();
-            return new BStruct(structType);
         }
 
         public void setOutboundMsgDataStreamer(HttpMessageDataStreamer outboundMsgDataStreamer) {

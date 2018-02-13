@@ -111,9 +111,12 @@ public function <OutRequest request> getContentLength () (int) {
 @Description {value:"Gets the inbound request payload in JSON format"}
 @Param {value:"request: The inbound request message"}
 @Return {value:"The JSON reresentation of the message payload"}
-public function <InRequest request> getJsonPayload () (json) {
-    mime:Entity entity = request.getEntity();
-    return mime:getJson(entity);
+public function <InRequest request> getJsonPayload () (json, mime:EntityBodyError) {
+    var entity, error = getValidatedEntity(request, mime:APPLICATION_JSON);
+    if (error != null) {
+        return null, error;
+    }
+    return mime:getJson(entity), null;
 }
 
 @Description {value:"Gets the outbound request payload in JSON format"}
@@ -128,7 +131,10 @@ public function <OutRequest request> getJsonPayload () (json) {
 @Param {value:"request: The inbound request message"}
 @Return {value:"The XML representation of the message payload"}
 public function <InRequest request> getXmlPayload () (xml) {
-    mime:Entity entity = request.getEntity();
+    var entity, error = getValidatedEntity(request, mime:APPLICATION_JSON);
+    if (error != null) {
+        return null, error;
+    }
     return mime:getXml(entity);
 }
 
@@ -136,7 +142,10 @@ public function <InRequest request> getXmlPayload () (xml) {
 @Param {value:"request: The outbound request message"}
 @Return {value:"The XML representation of the message payload"}
 public function <OutRequest request> getXmlPayload () (xml) {
-    mime:Entity entity = request.getEntity();
+    var entity, error = getValidatedEntity(request, mime:Xml);
+    if (error != null) {
+        return null, error;
+    }
     return mime:getXml(entity);
 }
 
