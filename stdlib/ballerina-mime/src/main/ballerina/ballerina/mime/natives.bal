@@ -43,6 +43,15 @@ public struct Entity {
     ContentDisposition contentDisposition;
 }
 
+@Description { value:"This represents any error occurs in entity body." }
+@Field {value:"msg:  An error message explaining about the error"}
+@Field {value:"cause: The error that caused EntityBodError to get thrown"}
+@Field {value:"stackTrace: Represents the invocation stack when EntityBodError is thrown"}
+public struct EntityBodyError {
+    string msg;
+    error cause;
+    StackFrame[] stackTrace;
+}
 
 @Description {value:"Represent values in Content-Disposition header"}
 @Field {value:"fileName: Default filename for storing the bodypart, if the receiving agent wishes to store it in an
@@ -236,6 +245,10 @@ function getEncoding(MediaType contentType) (string){
     }
     return encoding;
 }
+
+
+@Description {value:"Represent 'Content-Type' header key"}
+public const string CONTENT_TYPE = "content-type";
 
 @Description {value:"Represent 'application/x-www-form-urlencoded' media type value"}
 public const string APPLICATION_FORM_URLENCODED = "application/x-www-form-urlencoded";

@@ -24,6 +24,7 @@ package org.ballerinalang.mime.util;
 public class Constants {
 
     public static final String ENTITY = "Entity";
+    public static final String ENTITY_BODY_ERROR = "EntityBodyError";
     public static final String FILE = "File";
     public static final String MEDIA_TYPE = "MediaType";
     public static final String CONTENT_DISPOSITION_STRUCT = "ContentDisposition";
